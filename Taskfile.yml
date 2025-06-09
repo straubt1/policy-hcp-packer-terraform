@@ -1,0 +1,38 @@
+version: '3'
+
+dotenv: ['.env', 'secrets/.env']
+
+tasks:
+  hcp-list-buckets:
+    desc: Get API Response - List HCP Buckets
+    vars:
+      output_file: api/ListAllBuckets.json
+    cmds:
+      - |
+        mkdir -p $(dirname {{.output_file}})
+        HCP_ACCESS_TOKEN=$(curl --silent --show-error --location "https://auth.idp.hashicorp.com/oauth2/token" \
+          --header "Content-Type: application/x-www-form-urlencoded" \
+          --data-urlencode "client_id=${HCP_CLIENT_ID}" \
+          --data-urlencode "client_secret=${HCP_CLIENT_SECRET}" \
+          --data-urlencode "grant_type=client_credentials" \
+          --data-urlencode "audience=https://api.hashicorp.cloud" | jq -r '.access_token')
+        curl --silent --show-error --location "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/buckets" \
+          --header "Authorization: Bearer ${HCP_ACCESS_TOKEN}" \
+          --header "Content-Type: application/json" | jq . > {{.output_file}}
+  
+  format:
+    desc: Format all files in the repository, ignoring any potential hidden folder ".sentinel/"
+    cmds:
+      - find . -name "*.sentinel" ! -path "./.sentinel" -exec sentinel fmt {} \;
+  test-all:
+    cmds:
+      - sentinel test -verbose ./policies/*
+  test-aws:
+    cmds:
+      - sentinel test -verbose ./policies/aws/*
+  test-azure:
+    cmds:
+      - sentinel test -verbose ./policies/azure/*
+  test-gcp:
+    cmds:
+      - sentinel test -verbose ./policies/gcp/*

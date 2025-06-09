@@ -1,5 +1,6 @@
 # Local .terraform directories
 .terraform/
+.sentinel/
 
 # .tfstate files
 *.tfstate
@@ -35,3 +36,9 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+*.env*
+api/
+secrets/
+
+generate-mocks/*/backend.tf
+.terraform.lock.hcl

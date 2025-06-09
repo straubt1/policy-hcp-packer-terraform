@@ -1,0 +1,83 @@
+# Define an array of log levels, where the index represents the numeric value
+log_levels = {
+	"ERROR": 0,
+	"INFO":  1,
+	"WARN":  2,
+	"DEBUG": 3,
+	"TRACE": 4,
+}
+
+# Function to get the numeric value of a log level based on its position in the array
+func log_level_value(level) {
+	if level in log_levels {
+		return log_levels[level]
+	}
+	return -1
+}
+
+func err(message, LOG_LEVEL) {
+	error_level = log_level_value("ERROR")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= error_level {
+		print("[ERROR] " + message) # Log the message
+	}
+	return null # All functions must have a return, we will use null
+}
+
+func info(message, LOG_LEVEL) {
+	info_level = log_level_value("INFO")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= info_level {
+		print("[INFO] " + message) # Log the message
+	}
+	return null # All functions must have a return, we will use null
+}
+
+func warn(message, LOG_LEVEL) {
+	warn_level = log_level_value("WARN")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= warn_level {
+		print("[WARN] " + message) # Log the message
+	}
+	return null
+}
+
+func debug(message, LOG_LEVEL) {
+	debug_level = log_level_value("DEBUG")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= debug_level {
+		print("[DEBUG] " + message) # Log the message
+	}
+	return null
+}
+
+func trace(message, LOG_LEVEL) {
+	trace_level = log_level_value("TRACE")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= trace_level {
+		print("[TRACE] " + message) # Log the message
+	}
+	return null
+}
+
+# log = func(message, LOG_LEVEL) {
+#  # Log the message to the Sentinel log
+#  if LOG_LEVEL == "DEBUG" {
+#   # Log at DEBUG level
+#   print("[DEBUG] " + message)
+#  } else if LOG_LEVEL == "INFO" {
+#   # Log at INFO level
+#   print("[INFO] " + message)
+#  } else if LOG_LEVEL == "WARN" {
+#   # Log at WARN level
+#   print("[WARN] " + message)
+#  } else if LOG_LEVEL == "ERROR" {
+#   # Log at ERROR level
+#   print("[ERROR] " + message)
+#  } else {
+#   # Default to DEBUG if no valid log level is provided
+#   print("[DEBUG] Invalid log level, defaulting to DEBUG")
+#  }
+#  # print("[DEFAULT] " + message)
+#  return null # All functions must have a return, we will use null
+# }

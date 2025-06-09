@@ -1,0 +1,40 @@
+import "tfplan-functions" as plan
+import "hcp-packer-functions" as hcp
+import "http"
+import "strings"
+import "json"
+
+# Parameters for HCP credentials
+param hcp_client_id
+param hcp_client_secret
+param hcp_organization_id
+param hcp_project_id
+
+# Configure HCP functions
+hcp.setHCPConfiguration(hcp_client_id, hcp_client_secret, hcp_organization_id, hcp_project_id)
+
+# Get all resources of type aws_instance from the Terraform plan
+allEC2Instances = plan.find_resources("aws_instance")
+
+token = hcp.getHCPAuthToken()
+buckets = hcp.getBucketsForPlatform("aws")
+
+# Validate each EC2 instance
+instance_violations = {}
+for allEC2Instances as address, instance {
+	ami_id = instance.change.after.ami
+
+	images = hcp.getImageByImageId(buckets, ami_id)
+	if length(images) >= 1 {
+		bucket_names = map images as image { image.bucket_name }
+		print("Found HCP image for AMI ID:", ami_id, "in bucket(s): [", strings.join(bucket_names, ","), "]")
+	} else {
+		print("No HCP image found for AMI ID:", ami_id)
+		instance_violations[address] = instance
+	}
+}
+
+# Main rule
+main = rule {
+	length(instance_violations) is 0
+}
