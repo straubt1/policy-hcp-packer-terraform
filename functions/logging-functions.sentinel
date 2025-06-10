@@ -1,0 +1,73 @@
+# Define an array of log levels, where the index represents the numeric value
+log_levels = {
+	"ERROR": 0,
+	"INFO":  1,
+	"WARN":  2,
+	"DEBUG": 3,
+	"TRACE": 4,
+}
+
+LOG_LEVEL = "ERROR" # Default log level, can be overridden by the user
+
+# Set the log level to the provided value
+func set_log_level(level) {
+	if level in log_levels {
+		LOG_LEVEL = level
+	} else {
+		print("[ERROR] Invalid log level: " + level)
+	}
+	return null
+}
+
+# Function to get the numeric value of a log level based on its position in the array
+func log_level_value(level) {
+	if level in log_levels {
+		return log_levels[level]
+	}
+	return -1
+}
+
+func err(message) {
+	error_level = log_level_value("ERROR")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= error_level {
+		print("[ERROR] " + message)
+	}
+	return null
+}
+
+func info(message) {
+	info_level = log_level_value("INFO")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= info_level {
+		print("[INFO] " + message)
+	}
+	return null
+}
+
+func warn(message) {
+	warn_level = log_level_value("WARN")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= warn_level {
+		print("[WARN] " + message)
+	}
+	return null
+}
+
+func debug(message) {
+	debug_level = log_level_value("DEBUG")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= debug_level {
+		print("[DEBUG] " + message)
+	}
+	return null
+}
+
+func trace(message) {
+	trace_level = log_level_value("TRACE")
+	current_level = log_level_value(LOG_LEVEL)
+	if current_level >= trace_level {
+		print("[TRACE] " + message)
+	}
+	return null
+}

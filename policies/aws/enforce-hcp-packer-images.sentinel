@@ -1,0 +1,84 @@
+import "tfplan-functions" as plan
+import "hcp-packer-functions" as hcp
+import "hcp-test-config" as hcp_test_config
+import "http"
+import "strings"
+import "json"
+import "time"
+
+# Parameters for HCP credentials
+param hcp_client_id default ""
+param hcp_client_secret default ""
+param hcp_organization_id default ""
+param hcp_project_id default ""
+
+# This is only needed for testing purposes
+if hcp_client_id is "" or hcp_client_secret is "" or hcp_organization_id is "" or hcp_project_id is "" {
+	print("HCP credentials are not set. Use the static import for testing purposes.")
+	hcp_client_id = hcp_test_config.hcp_client_id
+	hcp_client_secret = hcp_test_config.hcp_client_secret
+	hcp_organization_id = hcp_test_config.hcp_organization_id
+	hcp_project_id = hcp_test_config.hcp_project_id
+}
+
+start = time.now
+
+# Configure HCP functions
+hcp.setHCPConfiguration(hcp_client_id, hcp_client_secret, hcp_organization_id, hcp_project_id)
+
+# Get all resources of type aws_instance from the Terraform plan
+allEC2Instances = plan.find_resources("aws_instance")
+
+token = hcp.getHCPAuthToken()
+buckets = hcp.getBucketsForPlatform("aws")
+
+# Validate each EC2 instance
+instance_violations = {}
+for allEC2Instances as address, instance {
+	ami_id = instance.change.after.ami
+
+	images = hcp.getImageByImageId(buckets, ami_id)
+	if length(images) >= 1 {
+		image = images[0]
+		status = image.status
+
+		if status is "VERSION_ACTIVE" {
+			print("Found image in HCP Packer")
+		} else if status is "VERSION_REVOKED" {
+			print("Found image in HCP Packer, but it is revoked")
+			instance_violations[address] = instance
+		} else if status is "VERSION_REVOCATION_SCHEDULED" {
+			print("Found image in HCP Packer, but it is scheduled to be revoked")
+			# Just a warning, not a violation
+		} else { # if ["VERSION_UNSET", "VERSION_RUNNING", "VERSION_CANCELLED", "VERSION_FAILED", "VERSION_FAILED"] contains (status) {
+			print("Found image in HCP Packer, but it is not ready")
+			instance_violations[address] = instance
+		}
+
+		print("  id:", ami_id)
+		print("  bucket_name:", image.bucket_name)
+		print("  version:", image.name)
+		print("  status:", image.status)
+		if image.revocation_message is not "" {
+			print("  revocation_message:", image.revocation_message)
+		}
+		if image.revocation_author is not "" {
+			print("  revocation_author:", image.revocation_author)
+		}
+		if image.revoke_at is not null {
+			print("  revoke_at:", image.revoke_at)
+		}
+	} else {
+		print("Image not found in HCP Packer:", ami_id)
+		instance_violations[address] = instance
+	}
+}
+
+stop = time.now
+duration = time.load(stop).sub(start)
+print("Policy execution time:", duration / 1000000, "ms")
+
+# Main rule
+main = rule {
+	length(instance_violations) is 0
+}
