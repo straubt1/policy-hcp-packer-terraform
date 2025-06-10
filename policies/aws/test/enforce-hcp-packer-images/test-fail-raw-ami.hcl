@@ -13,6 +13,11 @@ mock "tfplan/v2" {
 }
 
 # Functions
+import "static" "hcp-test-config" {
+  source = "../../../../secrets/hcp.json"
+  format = "json"
+}
+
 mock "logging-functions" {
   module {
     source = "../../../../functions/logging-functions.sentinel"

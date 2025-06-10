@@ -1,6 +1,11 @@
 #------------------------------------------------------------------------------
 # Sentinel Modules (function imports)
 #------------------------------------------------------------------------------
+import "static" "hcp-test-config" {
+  source = "./source/hcp.json"
+  format = "json"
+}
+
 import "module" "tfplan-functions" {
   source = "./functions/tfplan-functions.sentinel"
 }

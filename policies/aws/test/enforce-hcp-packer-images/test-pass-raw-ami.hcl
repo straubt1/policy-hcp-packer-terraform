@@ -6,6 +6,11 @@ test {
 }
 
 # Mocks
+import "static" "hcp-test-config" {
+  source = "../../../../secrets/hcp.json"
+  format = "json"
+}
+
 mock "tfplan/v2" {
   module {
     source = "mock-tfplan-pass-raw-ami.sentinel"
