@@ -1,10 +1,10 @@
 import "tfplan-functions" as plan
 import "hcp-packer-functions" as hcp
+import "hcp-test-config" as hcp_test_config
 import "http"
 import "strings"
 import "json"
 import "time"
-import "hcp-test-config" as hcp_test_config
 
 # Parameters for HCP credentials
 param hcp_client_id default ""
@@ -38,8 +38,8 @@ for allEC2Instances as address, instance {
 
 	images = hcp.getImageByImageId(buckets, ami_id)
 	if length(images) >= 1 {
-		status = images[0].status
 		image = images[0]
+		status = image.status
 
 		if status is "VERSION_ACTIVE" {
 			print("Found image in HCP Packer")
@@ -49,7 +49,7 @@ for allEC2Instances as address, instance {
 		} else if status is "VERSION_REVOCATION_SCHEDULED" {
 			print("Found image in HCP Packer, but it is scheduled to be revoked")
 			# Just a warning, not a violation
-		} else if ["VERSION_UNSET", "VERSION_RUNNING", "VERSION_CANCELLED", "VERSION_FAILED", "VERSION_FAILED"] contains (status) {
+		} else { # if ["VERSION_UNSET", "VERSION_RUNNING", "VERSION_CANCELLED", "VERSION_FAILED", "VERSION_FAILED"] contains (status) {
 			print("Found image in HCP Packer, but it is not ready")
 			instance_violations[address] = instance
 		}
@@ -76,6 +76,7 @@ for allEC2Instances as address, instance {
 stop = time.now
 duration = time.load(stop).sub(start)
 print("Policy execution time:", duration/1000000, "ms")
+
 # Main rule
 main = rule {
 	length(instance_violations) is 0
