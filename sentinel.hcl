@@ -1,14 +1,15 @@
 #------------------------------------------------------------------------------
 # Sentinel Modules (function imports)
 #------------------------------------------------------------------------------
-module "tfplan-functions" {
+import "module" "tfplan-functions" {
   source = "./functions/tfplan-functions.sentinel"
 }
 
-module "aws-functions" {
+import "module" "aws-functions" {
   source = "./functions/aws-functions.sentinel"
 }
-module "hcp-packer-functions" {
+
+import "module" "hcp-packer-functions" {
   source = "./functions/hcp-packer-functions.sentinel"
 }
 
