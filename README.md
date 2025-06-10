@@ -65,3 +65,5 @@ Usage:
   - `import "hcp-packer-functions" as hcp`
 - Call the `hcp.setHCPConfiguration()` function to set the necessary parameters for HCP Packer. This is done to avoid having to pass into every function the parameters needed to connect to HCP Packer.
 - Get an Auth Token using `hcp.getAuthToken()`.
+- Use `hcp.getBucketsForPlatform()` to retrieve the list of buckets for a specific platform (e.g., AWS, GCP, Azure).
+- Use `hcp.getImageDetails(image_id)` to retrieve the details of a specific image from the HCP Packer Registry.
