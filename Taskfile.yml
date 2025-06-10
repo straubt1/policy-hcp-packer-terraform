@@ -20,6 +20,26 @@ tasks:
           --header "Authorization: Bearer ${HCP_ACCESS_TOKEN}" \
           --header "Content-Type: application/json" | jq . > {{.output_file}}
   
+  hcp-list-image-versions:
+    desc: Get API Response - List Image Versions for an HCP Bucket
+    vars:
+      bucket_name: aws-core-ubuntu-2204
+      output_file: api/ListAllImageVersions_{{.bucket_name}}.json
+    cmds:
+      - |
+        mkdir -p $(dirname {{.output_file}})
+        HCP_ACCESS_TOKEN=$(curl --silent --show-error --location "https://auth.idp.hashicorp.com/oauth2/token" \
+          --header "Content-Type: application/x-www-form-urlencoded" \
+          --data-urlencode "client_id=${HCP_CLIENT_ID}" \
+          --data-urlencode "client_secret=${HCP_CLIENT_SECRET}" \
+          --data-urlencode "grant_type=client_credentials" \
+          --data-urlencode "audience=https://api.hashicorp.cloud" | jq -r '.access_token')
+        curl --silent --show-error --location "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/buckets/{{.bucket_name}}/versions?sorting.order_by=name&pagination.page_size=100" \
+          --header "Authorization: Bearer ${HCP_ACCESS_TOKEN}" \
+          --header "Content-Type: application/json" | jq . > {{.output_file}}
+  
+  
+
   format:
     desc: Format all files in the repository, ignoring any potential hidden folder ".sentinel/"
     cmds:

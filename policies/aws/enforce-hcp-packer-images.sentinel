@@ -12,6 +12,7 @@ param hcp_client_secret default ""
 param hcp_organization_id default ""
 param hcp_project_id default ""
 
+# This is only needed for testing purposes
 if hcp_client_id is "" or hcp_client_secret is "" or hcp_organization_id is "" or hcp_project_id is "" {
 	print("HCP credentials are not set. Use the static import for testing purposes.")
 	hcp_client_id = hcp_test_config.hcp_client_id
@@ -75,7 +76,7 @@ for allEC2Instances as address, instance {
 
 stop = time.now
 duration = time.load(stop).sub(start)
-print("Policy execution time:", duration/1000000, "ms")
+print("Policy execution time:", duration / 1000000, "ms")
 
 # Main rule
 main = rule {

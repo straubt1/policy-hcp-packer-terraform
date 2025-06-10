@@ -7,6 +7,18 @@ log_levels = {
 	"TRACE": 4,
 }
 
+LOG_LEVEL = "ERROR" # Default log level, can be overridden by the user
+
+# Set the log level to the provided value
+func set_log_level(level) {
+	if level in log_levels {
+		LOG_LEVEL = level
+	} else {
+		print("[ERROR] Invalid log level: " + level)
+	}
+	return null
+}
+
 # Function to get the numeric value of a log level based on its position in the array
 func log_level_value(level) {
 	if level in log_levels {
@@ -15,69 +27,47 @@ func log_level_value(level) {
 	return -1
 }
 
-func err(message, LOG_LEVEL) {
+func err(message) {
 	error_level = log_level_value("ERROR")
 	current_level = log_level_value(LOG_LEVEL)
 	if current_level >= error_level {
-		print("[ERROR] " + message) # Log the message
+		print("[ERROR] " + message)
 	}
-	return null # All functions must have a return, we will use null
+	return null
 }
 
-func info(message, LOG_LEVEL) {
+func info(message) {
 	info_level = log_level_value("INFO")
 	current_level = log_level_value(LOG_LEVEL)
 	if current_level >= info_level {
-		print("[INFO] " + message) # Log the message
+		print("[INFO] " + message)
 	}
-	return null # All functions must have a return, we will use null
+	return null
 }
 
-func warn(message, LOG_LEVEL) {
+func warn(message) {
 	warn_level = log_level_value("WARN")
 	current_level = log_level_value(LOG_LEVEL)
 	if current_level >= warn_level {
-		print("[WARN] " + message) # Log the message
+		print("[WARN] " + message)
 	}
 	return null
 }
 
-func debug(message, LOG_LEVEL) {
+func debug(message) {
 	debug_level = log_level_value("DEBUG")
 	current_level = log_level_value(LOG_LEVEL)
 	if current_level >= debug_level {
-		print("[DEBUG] " + message) # Log the message
+		print("[DEBUG] " + message)
 	}
 	return null
 }
 
-func trace(message, LOG_LEVEL) {
+func trace(message) {
 	trace_level = log_level_value("TRACE")
 	current_level = log_level_value(LOG_LEVEL)
 	if current_level >= trace_level {
-		print("[TRACE] " + message) # Log the message
+		print("[TRACE] " + message)
 	}
 	return null
 }
-
-# log = func(message, LOG_LEVEL) {
-#  # Log the message to the Sentinel log
-#  if LOG_LEVEL == "DEBUG" {
-#   # Log at DEBUG level
-#   print("[DEBUG] " + message)
-#  } else if LOG_LEVEL == "INFO" {
-#   # Log at INFO level
-#   print("[INFO] " + message)
-#  } else if LOG_LEVEL == "WARN" {
-#   # Log at WARN level
-#   print("[WARN] " + message)
-#  } else if LOG_LEVEL == "ERROR" {
-#   # Log at ERROR level
-#   print("[ERROR] " + message)
-#  } else {
-#   # Default to DEBUG if no valid log level is provided
-#   print("[DEBUG] Invalid log level, defaulting to DEBUG")
-#  }
-#  # print("[DEFAULT] " + message)
-#  return null # All functions must have a return, we will use null
-# }
