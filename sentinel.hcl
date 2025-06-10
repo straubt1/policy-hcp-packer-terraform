@@ -15,7 +15,7 @@ module "hcp-packer-functions" {
 #------------------------------------------------------------------------------
 # Sentinel Policies
 #------------------------------------------------------------------------------
-policy "enforce-required-tags" {
+policy "enforce-hcp-packer-images" {
   source            = "./policies/aws/enforce-hcp-packer-images.sentinel"
   enforcement_level = "advisory"
 }
