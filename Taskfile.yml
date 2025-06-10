@@ -16,7 +16,7 @@ tasks:
           --data-urlencode "client_secret=${HCP_CLIENT_SECRET}" \
           --data-urlencode "grant_type=client_credentials" \
           --data-urlencode "audience=https://api.hashicorp.cloud" | jq -r '.access_token')
-        curl --silent --show-error --location "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/buckets" \
+        curl --silent --show-error --location "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/buckets?sorting.order_by=name&pagination.page_size=2" \
           --header "Authorization: Bearer ${HCP_ACCESS_TOKEN}" \
           --header "Content-Type: application/json" | jq . > {{.output_file}}
   
