@@ -5,6 +5,10 @@ import "json"
 hcp_config = {}       # set with setHCPConfiguration()
 hcp_access_token = "" # set with getHCPAuthToken()
 
+# Cache variables to reduce the number of API calls
+allBucketsCache = null
+allBucketVersionsCache = {}
+
 # This function will seed all the HCP configuration parameters for easy access in future function calls
 func setHCPConfiguration(hcp_client_id, hcp_client_secret, hcp_organization_id, hcp_project_id) {
 	hcp_config = {
@@ -74,21 +78,23 @@ func fetchAllPages(base_endpoint, property, next_page_token, all_pages) {
 # Get all HCP Packer buckets of the given platform (AWS, Azure, GCP, etc.)
 # https://developer.hashicorp.com/hcp/api-docs/packer#PackerService_ListBuckets
 func getBucketsForPlatform(platform) {
-	endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
-		hcp_config.organization_id +
-		"/projects/" +
-		hcp_config.project_id +
-		"/buckets"
-
-	all_buckets = fetchAllPages(endpoint, "buckets", "", [])
+	# Only fetch all buckets if they are not already cached
+	if allBucketsCache is null {
+		endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
+			hcp_config.organization_id +
+			"/projects/" +
+			hcp_config.project_id +
+			"/buckets"
+		allBucketsCache = fetchAllPages(endpoint, "buckets", "", [])
+	}
+	all_buckets = allBucketsCache
 
 	# Filter all_buckets for the platform
-	buckets = filter all_buckets as bucket {
+	return filter all_buckets as bucket {
 		any bucket.platforms as bucket_platform {
 			bucket_platform is platform
 		}
 	}
-	return buckets
 }
 
 # Attempt to find a specific image by its ID in all the buckets
@@ -96,23 +102,21 @@ func getBucketsForPlatform(platform) {
 # It is unlikely that an image ID will be found multiple times in the same bucket
 # It is also unlikely that an image ID will be found in multiple buckets, but this function currently doesn't handle that case.
 func getImageByImageId(buckets, image_id) {
-	# Loop through each bucket to find the image ID
+	# Loop through each bucket to look for the image ID
 	image_versions = []
 	for buckets as bucket {
-		# print("Searching for image ID:", image_id, "in bucket:", bucket.name)
-		endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
-			hcp_config.organization_id +
-			"/projects/" +
-			hcp_config.project_id +
-			"/buckets/" +
-			bucket.name +
-			"/versions"
-
-		all_bucket_versions = fetchAllPages(endpoint, "versions", "", [])
-		# print(all_bucket_versions)
-		# req = http.request(endpoint).with_header("Authorization", "Bearer " + hcp_access_token).with_header("Content-Type", "application/json").with_header("Accept", "application/json")
-		# response = http.get(req)
-		# body = json.unmarshal(response.body)
+		# Check if versions for this bucket are already cached
+		if allBucketVersionsCache[bucket.name] is not defined {
+			endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
+				hcp_config.organization_id +
+				"/projects/" +
+				hcp_config.project_id +
+				"/buckets/" +
+				bucket.name +
+				"/versions"
+			allBucketVersionsCache[bucket.name] = fetchAllPages(endpoint, "versions", "", [])
+		}
+		all_bucket_versions = allBucketVersionsCache[bucket.name]
 
 		# Filter the versions/builds/artifacts to find the one with the specified image ID
 		image_versions = filter all_bucket_versions as version {
