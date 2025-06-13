@@ -12,6 +12,55 @@ param hcp_client_secret default ""
 param hcp_organization_id default ""
 param hcp_project_id default ""
 
+# Validate image IDs of all EC2 instances in the Terraform plan
+func validateImageIds(allEC2Instances) {
+	token = hcp.getHCPAuthToken()
+	buckets = hcp.getBucketsForPlatform("aws")
+
+	# Validate each EC2 instance
+	instance_violations = {}
+	for allEC2Instances as address, instance {
+		ami_id = instance.change.after.ami
+
+		images = hcp.getImageByImageId(buckets, ami_id)
+		if length(images) >= 1 {
+			image = images[0]
+			status = image.status
+
+			if status is "VERSION_ACTIVE" {
+				print("Found image in HCP Packer")
+			} else if status is "VERSION_REVOKED" {
+				print("Found image in HCP Packer, but it is revoked")
+				instance_violations[address] = instance
+			} else if status is "VERSION_REVOCATION_SCHEDULED" {
+				print("Found image in HCP Packer, but it is scheduled to be revoked")
+				# Just a warning, not a violation
+			} else { # if ["VERSION_UNSET", "VERSION_RUNNING", "VERSION_CANCELLED", "VERSION_FAILED", "VERSION_FAILED"] contains (status) {
+				print("Found image in HCP Packer, but it is not ready")
+				instance_violations[address] = instance
+			}
+
+			print("  id:", ami_id)
+			print("  bucket_name:", image.bucket_name)
+			print("  version:", image.name)
+			print("  status:", image.status)
+			if image.revocation_message is not "" {
+				print("  revocation_message:", image.revocation_message)
+			}
+			if image.revocation_author is not "" {
+				print("  revocation_author:", image.revocation_author)
+			}
+			if image.revoke_at is not null {
+				print("  revoke_at:", image.revoke_at)
+			}
+		} else {
+			print("Image not found in HCP Packer:", ami_id)
+			instance_violations[address] = instance
+		}
+	}
+	return instance_violations
+}
+
 # This is only needed for testing purposes
 if hcp_client_id is "" or hcp_client_secret is "" or hcp_organization_id is "" or hcp_project_id is "" {
 	print("HCP credentials are not set. Use the static import for testing purposes.")
@@ -29,49 +78,9 @@ hcp.setHCPConfiguration(hcp_client_id, hcp_client_secret, hcp_organization_id, h
 # Get all resources of type aws_instance from the Terraform plan
 allEC2Instances = plan.find_resources("aws_instance")
 
-token = hcp.getHCPAuthToken()
-buckets = hcp.getBucketsForPlatform("aws")
-
-# Validate each EC2 instance
 instance_violations = {}
-for allEC2Instances as address, instance {
-	ami_id = instance.change.after.ami
-
-	images = hcp.getImageByImageId(buckets, ami_id)
-	if length(images) >= 1 {
-		image = images[0]
-		status = image.status
-
-		if status is "VERSION_ACTIVE" {
-			print("Found image in HCP Packer")
-		} else if status is "VERSION_REVOKED" {
-			print("Found image in HCP Packer, but it is revoked")
-			instance_violations[address] = instance
-		} else if status is "VERSION_REVOCATION_SCHEDULED" {
-			print("Found image in HCP Packer, but it is scheduled to be revoked")
-			# Just a warning, not a violation
-		} else { # if ["VERSION_UNSET", "VERSION_RUNNING", "VERSION_CANCELLED", "VERSION_FAILED", "VERSION_FAILED"] contains (status) {
-			print("Found image in HCP Packer, but it is not ready")
-			instance_violations[address] = instance
-		}
-
-		print("  id:", ami_id)
-		print("  bucket_name:", image.bucket_name)
-		print("  version:", image.name)
-		print("  status:", image.status)
-		if image.revocation_message is not "" {
-			print("  revocation_message:", image.revocation_message)
-		}
-		if image.revocation_author is not "" {
-			print("  revocation_author:", image.revocation_author)
-		}
-		if image.revoke_at is not null {
-			print("  revoke_at:", image.revoke_at)
-		}
-	} else {
-		print("Image not found in HCP Packer:", ami_id)
-		instance_violations[address] = instance
-	}
+if length(allEC2Instances) > 0 {
+	instance_violations = validateImageIds(allEC2Instances)
 }
 
 stop = time.now
