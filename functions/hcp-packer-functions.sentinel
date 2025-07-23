@@ -155,7 +155,7 @@ func searchExternalArtifactPage(external_identifier, region, platform, page_size
         query_params = append(query_params, "pagination.previous_page_token=" + previous_page_token)
     }
     if length(query_params) > 0 {
-        endpoint = endpoint + "?" + join(query_params, "&")
+        endpoint = endpoint + "?" + strings.join(query_params, "&")
     }
 
     # Build the request body

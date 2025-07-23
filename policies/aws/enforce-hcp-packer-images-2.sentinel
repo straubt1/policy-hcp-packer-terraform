@@ -31,7 +31,7 @@ func validateImageIds(allEC2Instances) {
         }
 
         if found_artifact != null {
-            version = artifact.version
+            version = found_artifact.version
             status = version.status
 
             if status is "VERSION_ACTIVE" {
@@ -48,7 +48,7 @@ func validateImageIds(allEC2Instances) {
             }
 
             print("  id:", ami_id)
-            print("  bucket_name:", artifact.bucket.name)
+            print("  bucket_name:", found_artifact.bucket.name)
             print("  version:", version.name)
             print("  status:", version.status)
             if version.revocation_message is not "" {
