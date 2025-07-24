@@ -5,10 +5,6 @@ import "json"
 hcp_config = {}       # set with setHCPConfiguration()
 hcp_access_token = "" # set with getHCPAuthToken()
 
-# Cache variables to reduce the number of API calls
-allBucketsCache = null
-allBucketVersionsCache = {}
-
 # This function will seed all the HCP configuration parameters for easy access in future function calls
 func setHCPConfiguration(hcp_client_id, hcp_client_secret, hcp_organization_id, hcp_project_id) {
 	hcp_config = {
@@ -39,162 +35,112 @@ func getHCPAuthToken() {
 	return hcp_access_token
 }
 
-# This function handles pagination for the HCP API calls and is only called from other functions in this file.
-# It recursively fetches all pages of results until no next_page_token is found.
-# This is necessary because Sentinel does not support while loops.
-func fetchAllPages(base_endpoint, property, next_page_token, all_pages) {
-	# Update query parameters for pagination and sorting
-	page_size = 100
-	endpoint = base_endpoint +
-		"?sorting.order_by=name" + # Sort by name for consistency
-		"&pagination.page_size=" + # Set page size to reduce the number of API calls
-		string(page_size)
-
-	# If a next_page_token is provided, append it to the endpoint
-	if next_page_token != "" {
-		endpoint = endpoint + "&pagination.next_page_token=" + next_page_token
-	}
-
-	# Build the HTTP request with the necessary headers
-	req = http.request(endpoint).with_header("Authorization", "Bearer " + hcp_access_token).with_header("Content-Type", "application/json").with_header("Accept", "application/json")
-
-	# Make the HTTP GET request to the HCP API
-	response = http.get(req)
-	body = json.unmarshal(response.body)
-
-	# Index the response body to get the property we are interested in
-	# Most endpoints return a single property that contains the list of items, e.g., "buckets" or "versions"
-	all_pages = all_pages + body[property]
-
-	# If we have another page to fetch, recursively call this function
-	if body.pagination is defined and body.pagination.next_page_token is defined and body.pagination.next_page_token != "" {
-		return fetchAllPages(base_endpoint, property, body.pagination.next_page_token, all_pages)
-	}
-
-	# Return the accumulated pages through function recursion
-	return all_pages
-}
-
-# Get all HCP Packer buckets of the given platform (AWS, Azure, GCP, etc.)
-# https://developer.hashicorp.com/hcp/api-docs/packer#PackerService_ListBuckets
-func getBucketsForPlatform(platform) {
-	# Only fetch all buckets if they are not already cached
-	if allBucketsCache is null {
-		endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
-			hcp_config.organization_id +
-			"/projects/" +
-			hcp_config.project_id +
-			"/buckets"
-		allBucketsCache = fetchAllPages(endpoint, "buckets", "", [])
-	}
-	all_buckets = allBucketsCache
-
-	# Filter all_buckets for the platform
-	return filter all_buckets as bucket {
-		any bucket.platforms as bucket_platform {
-			bucket_platform is platform
-		}
-	}
-}
-
-# Attempt to find a specific image by its ID in all the buckets
-# Once an image is found in a bucket, it returns the image(s) found in that bucket only.
-# It is unlikely that an image ID will be found multiple times in the same bucket
-# It is also unlikely that an image ID will be found in multiple buckets, but this function currently doesn't handle that case.
-func getImageByImageId(buckets, image_id) {
-	# Loop through each bucket to look for the image ID
-	image_versions = []
-	for buckets as bucket {
-		# Check if versions for this bucket are already cached
-		if allBucketVersionsCache[bucket.name] is not defined {
-			endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
-				hcp_config.organization_id +
-				"/projects/" +
-				hcp_config.project_id +
-				"/buckets/" +
-				bucket.name +
-				"/versions"
-			allBucketVersionsCache[bucket.name] = fetchAllPages(endpoint, "versions", "", [])
-		}
-		all_bucket_versions = allBucketVersionsCache[bucket.name]
-
-		# Filter the versions/builds/artifacts to find the one with the specified image ID
-		image_versions = filter all_bucket_versions as version {
-			any version.builds as build {
-				any build.artifacts as artifact {
-					artifact.external_identifier is image_id
-				}
-			}
-		}
-		# if found, return all matches, let the policy decided what to do if there are multiple matches
-		if length(image_versions) > 0 {
-			# print("Found image ID:", image_id, "in bucket:", bucket.name)
-			return image_versions
-		}
-	}
-	return image_versions
-}
-
-# Fetch a single page of external artifacts
-func searchExternalArtifactPage(external_identifier, region, platform, page_size, next_page_token, previous_page_token) {
-    endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
+func getImageByExternalIdentifier(external_identifier) {
+	endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
         hcp_config.organization_id +
         "/projects/" +
         hcp_config.project_id +
         "/_search/external_artifact"
 
-    # Build query string
-    query_params = []
-    if page_size != null {
-        query_params = append(query_params, "pagination.page_size=" + string(page_size))
-    }
-    if next_page_token != null && next_page_token != "" {
-        query_params = append(query_params, "pagination.next_page_token=" + next_page_token)
-    }
-    if previous_page_token != null && previous_page_token != "" {
-        query_params = append(query_params, "pagination.previous_page_token=" + previous_page_token)
-    }
-    if length(query_params) > 0 {
-        endpoint = endpoint + "?" + strings.join(query_params, "&")
-    }
+	body = {
+		"external_identifier": external_identifier,
+	}
 
-    # Build the request body
-    request_body = {
-        "external_identifier": external_identifier
-    }
-    if region != null && region != "" {
-        request_body["region"] = region
-    }
-    if platform != null && platform != "" {
-        request_body["platform"] = platform
-    }
+	# Build the HTTP request with the necessary headers
+	req = http.request(endpoint).with_header("Authorization", "Bearer " + hcp_access_token).with_header("Content-Type", "application/json").with_header("Accept", "application/json").with_body(json.marshal(body))
 
-    request_body_json = json.marshal(request_body)
-
-    req = http.request(endpoint)
-        .with_header("Authorization", "Bearer " + hcp_access_token)
-        .with_header("Content-Type", "application/json")
-        .with_header("Accept", "application/json")
-        .with_body(request_body_json)
-
-    response = http.post(req)
-    return json.unmarshal(response.body)
+	# Make the HTTP POST request to the HCP API
+	response = http.post(req)
+	return parseImageResponse(json.unmarshal(response.body), external_identifier)
 }
 
-func searchExternalArtifactAllPages(external_identifier, region, platform, page_size) {
-    all_artifacts = []
-    next_page_token = null
+# Convert the response to a more usable format for the policy to evaluate
+# This will also handle when more than one artifact or build is found
+func parseImageResponse(r, external_identifier) {
+	if r == null {
+		return {}
+	}
+	if r.artifacts == null {
+		return {}
+	}
+	if length(r.artifacts) == 0 {
+		return {}
+	}
+	# Check for uncommon cases and print a warning
+	if length(r.artifacts) >1  {
+		print("[WARNING]: More than one artifact found for the given external identifier. Returning the first one.")
+	}
 
-    while true {
-        resp = searchExternalArtifactPage(external_identifier, region, platform, page_size, next_page_token, null)
-        if resp.artifacts is defined {
-            all_artifacts = all_artifacts + resp.artifacts
-        }
-        if resp.pagination is defined && resp.pagination.next_page_token is defined && resp.pagination.next_page_token != "" {
-            next_page_token = resp.pagination.next_page_token
-        } else {
-            break
-        }
-    }
-    return all_artifacts
+	artifact = r.artifacts[0]
+	if length(artifact.build.artifacts) == 0 {
+		print("[ERROR]: No build artifacts found for the given external identifier. Returning empty object.")
+	}
+
+	if length(artifact.build.artifacts) > 1{ 
+		print("[WARNING]: More than one build artifact found for the given external identifier. Returning the first one.")
+	}
+	build_artifact = artifact.build.artifacts[0] 
+
+	p = {	}
+	p["external_identifier"] = external_identifier
+	p["bucket"] = {
+		"name": artifact.bucket.name,
+		"id": artifact.bucket.id,
+		"labels": artifact.bucket.labels,
+	}
+	p["build"] = {
+		"id": artifact.build.id,
+		"status": artifact.build.status,
+		"platform": artifact.build.platform,
+		"labels": artifact.build.labels,
+	}
+	p["version"] = {
+		"name": artifact.version.name,
+		"id": artifact.version.id,
+		"status": artifact.version.status,
+		"revocation_message": artifact.version.revocation_message,
+		"revocation_author": artifact.version.revocation_author,
+		"revoke_at": artifact.version.revoke_at,
+	}
+	p["artifact"] = {
+		"id": build_artifact.id,
+		"region": build_artifact.region,
+		"created_at": build_artifact.created_at,
+		"external_identifier": build_artifact.external_identifier,
+	}
+
+	return p
+}
+
+func printImageDetails(p) {
+	# Safety Check
+	if p is {} {
+		return null
+	}
+	print("HCP Packer Image Details:")
+	print("	external_identifier:", p.external_identifier)
+	print("	bucket:", p.bucket.name, "(", p.bucket.id, ")")
+	print("	bucket_labels:")
+	for p.bucket.labels as key, value {
+		print("	 ", key, ":", value)
+	}
+	print("	build:", p.build.id)
+	print("	build_platform:", p.build.platform)
+	print("	build_labels:")
+	for p.build.labels as key, value {
+		print("	 ", key, ":", value)
+	}
+	print("	build_status:", p.build.status)
+	print("	version:", p.version.name)
+	print("	version_status:", p.version.status)
+	if p.version.revocation_message is not "" {
+		print("	version_revocation_message:", p.version.revocation_message)
+	}
+	if p.version.revocation_author is not "" {
+		print("	version_revocation_author:", p.version.revocation_author)
+	}
+	if p.version.revoke_at is not null {
+		print("	version_revoke_at:", p.version.revoke_at)
+	}
+	return null
 }
