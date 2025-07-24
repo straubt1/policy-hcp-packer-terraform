@@ -134,3 +134,67 @@ func getImageByImageId(buckets, image_id) {
 	}
 	return image_versions
 }
+
+# Fetch a single page of external artifacts
+func searchExternalArtifactPage(external_identifier, region, platform, page_size, next_page_token, previous_page_token) {
+    endpoint = "https://api.cloud.hashicorp.com/packer/2023-01-01/organizations/" +
+        hcp_config.organization_id +
+        "/projects/" +
+        hcp_config.project_id +
+        "/_search/external_artifact"
+
+    # Build query string
+    query_params = []
+    if page_size != null {
+        query_params = append(query_params, "pagination.page_size=" + string(page_size))
+    }
+    if next_page_token != null && next_page_token != "" {
+        query_params = append(query_params, "pagination.next_page_token=" + next_page_token)
+    }
+    if previous_page_token != null && previous_page_token != "" {
+        query_params = append(query_params, "pagination.previous_page_token=" + previous_page_token)
+    }
+    if length(query_params) > 0 {
+        endpoint = endpoint + "?" + strings.join(query_params, "&")
+    }
+
+    # Build the request body
+    request_body = {
+        "external_identifier": external_identifier
+    }
+    if region != null && region != "" {
+        request_body["region"] = region
+    }
+    if platform != null && platform != "" {
+        request_body["platform"] = platform
+    }
+
+    request_body_json = json.marshal(request_body)
+
+    req = http.request(endpoint)
+        .with_header("Authorization", "Bearer " + hcp_access_token)
+        .with_header("Content-Type", "application/json")
+        .with_header("Accept", "application/json")
+        .with_body(request_body_json)
+
+    response = http.post(req)
+    return json.unmarshal(response.body)
+}
+
+func searchExternalArtifactAllPages(external_identifier, region, platform, page_size) {
+    all_artifacts = []
+    next_page_token = null
+
+    while true {
+        resp = searchExternalArtifactPage(external_identifier, region, platform, page_size, next_page_token, null)
+        if resp.artifacts is defined {
+            all_artifacts = all_artifacts + resp.artifacts
+        }
+        if resp.pagination is defined && resp.pagination.next_page_token is defined && resp.pagination.next_page_token != "" {
+            next_page_token = resp.pagination.next_page_token
+        } else {
+            break
+        }
+    }
+    return all_artifacts
+}

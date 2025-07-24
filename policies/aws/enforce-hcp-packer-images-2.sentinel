@@ -1,0 +1,100 @@
+import "tfplan-functions" as plan
+import "hcp-packer-functions" as hcp
+import "hcp-test-config" as hcp_test_config
+import "http"
+import "strings"
+import "json"
+import "time"
+
+# Parameters for HCP credentials
+param hcp_client_id default ""
+param hcp_client_secret default ""
+param hcp_organization_id default ""
+param hcp_project_id default ""
+
+# Validate image IDs of all EC2 instances in the Terraform plan using the new search API
+func validateImageIds(allEC2Instances) {
+    instance_violations = {}
+    for allEC2Instances as address, instance {
+        ami_id = instance.change.after.ami
+
+        # Fetch all artifacts for this AMI using the new API
+        artifacts = hcp.searchExternalArtifactAllPages(ami_id, "", "", 200)
+
+        # Find the first artifact where artifact.bucket.name == "aws"
+        found_artifact = null
+        for artifacts as artifact {
+            if artifact.bucket.name == "aws" {
+                found_artifact = artifact
+                break
+            }
+        }
+
+        if found_artifact != null {
+            version = found_artifact.version
+            status = version.status
+
+            if status is "VERSION_ACTIVE" {
+                print("Found image in HCP Packer")
+            } else if status is "VERSION_REVOKED" {
+                print("Found image in HCP Packer, but it is revoked")
+                instance_violations[address] = instance
+            } else if status is "VERSION_REVOCATION_SCHEDULED" {
+                print("Found image in HCP Packer, but it is scheduled to be revoked")
+                # Just a warning, not a violation
+            } else {
+                print("Found image in HCP Packer, but it is not ready")
+                instance_violations[address] = instance
+            }
+
+            print("  id:", ami_id)
+            print("  bucket_name:", found_artifact.bucket.name)
+            print("  version:", version.name)
+            print("  status:", version.status)
+            if version.revocation_message is not "" {
+                print("  revocation_message:", version.revocation_message)
+            }
+            if version.revocation_author is not "" {
+                print("  revocation_author:", version.revocation_author)
+            }
+            if version.revoke_at is not null {
+                print("  revoke_at:", version.revoke_at)
+            }
+        } else {
+            print("Image not found in HCP Packer:", ami_id)
+            instance_violations[address] = instance
+        }
+    }
+    return instance_violations
+}
+
+# This is only needed for testing purposes
+if hcp_client_id is "" or hcp_client_secret is "" or hcp_organization_id is "" or hcp_project_id is "" {
+    print("HCP credentials are not set. Use the static import for testing purposes.")
+    hcp_client_id = hcp_test_config.hcp_client_id
+    hcp_client_secret = hcp_test_config.hcp_client_secret
+    hcp_organization_id = hcp_test_config.hcp_organization_id
+    hcp_project_id = hcp_test_config.hcp_project_id
+}
+
+start = time.now
+
+# Configure HCP functions
+hcp.setHCPConfiguration(hcp_client_id, hcp_client_secret, hcp_organization_id, hcp_project_id)
+
+# Get all resources of type aws_instance from the Terraform plan
+allEC2Instances = plan.find_resources("aws_instance")
+
+instance_violations = {}
+if length(allEC2Instances) > 0 {
+    instance_violations = validateImageIds(allEC2Instances)
+}
+
+stop = time.now
+duration = time.load(stop).sub(start)
+print("Policy execution time:", duration / 1000000, "ms")
+
+# Main rule
+main = rule {
+    length(instance_violations) is 0
+}
