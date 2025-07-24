@@ -1,0 +1,453 @@
+terraform_version = "1.11.3"
+
+planned_values = {
+	"outputs": {},
+	"resources": {
+		"aws_instance.hcp_packer": {
+			"address":        "aws_instance.hcp_packer",
+			"depends_on":     [],
+			"deposed_key":    "",
+			"index":          null,
+			"mode":           "managed",
+			"module_address": "",
+			"name":           "hcp_packer",
+			"provider_name":  "registry.terraform.io/hashicorp/aws",
+			"tainted":        false,
+			"type":           "aws_instance",
+			"values": {
+				"ami": "ami-0040e243c5f8879c3",
+				"credit_specification":        [],
+				"get_password_data":           false,
+				"hibernation":                 null,
+				"instance_type":               "t2.micro",
+				"launch_template":             [],
+				"source_dest_check":           true,
+				"tags":                        null,
+				"timeouts":                    null,
+				"user_data_replace_on_change": false,
+				"volume_tags":                 null,
+			},
+		},
+	},
+}
+
+variables = {
+	"HCP_CLIENT_ID": {
+		"name":  "HCP_CLIENT_ID",
+		"value": "REDACTED_SENSITIVE",
+	},
+	"HCP_CLIENT_SECRET": {
+		"name":  "HCP_CLIENT_SECRET",
+		"value": "REDACTED_SENSITIVE",
+	},
+	"bucket_name": {
+		"name":  "bucket_name",
+		"value": "aws-core-ubuntu-2204",
+	},
+	"region": {
+		"name":  "region",
+		"value": "us-east-1",
+	},
+}
+
+resource_changes = {
+	"aws_instance.hcp_packer": {
+		"address": "aws_instance.hcp_packer",
+		"change": {
+			"actions": [
+				"create",
+			],
+			"after": {
+				"ami": "ami-0040e243c5f8879c3",
+				"credit_specification":        [],
+				"get_password_data":           false,
+				"hibernation":                 null,
+				"instance_type":               "t2.micro",
+				"launch_template":             [],
+				"source_dest_check":           true,
+				"tags":                        null,
+				"timeouts":                    null,
+				"user_data_replace_on_change": false,
+				"volume_tags":                 null,
+			},
+			"after_unknown": {
+				"arn": true,
+				"associate_public_ip_address":        true,
+				"availability_zone":                  true,
+				"capacity_reservation_specification": true,
+				"cpu_core_count":                     true,
+				"cpu_options":                        true,
+				"cpu_threads_per_core":               true,
+				"credit_specification":               [],
+				"disable_api_stop":                   true,
+				"disable_api_termination":            true,
+				"ebs_block_device":                   true,
+				"ebs_optimized":                      true,
+				"enable_primary_ipv6":                true,
+				"enclave_options":                    true,
+				"ephemeral_block_device":             true,
+				"host_id":                            true,
+				"host_resource_group_arn":            true,
+				"iam_instance_profile":               true,
+				"id": true,
+				"instance_initiated_shutdown_behavior": true,
+				"instance_lifecycle":                   true,
+				"instance_market_options":              true,
+				"instance_state":                       true,
+				"ipv6_address_count":                   true,
+				"ipv6_addresses":                       true,
+				"key_name":                             true,
+				"launch_template":                      [],
+				"maintenance_options":                  true,
+				"metadata_options":                     true,
+				"monitoring":                           true,
+				"network_interface":                    true,
+				"outpost_arn":                          true,
+				"password_data":                        true,
+				"placement_group":                      true,
+				"placement_partition_number":           true,
+				"primary_network_interface_id":         true,
+				"private_dns":                          true,
+				"private_dns_name_options":             true,
+				"private_ip":                           true,
+				"public_dns":                           true,
+				"public_ip":                            true,
+				"root_block_device":                    true,
+				"secondary_private_ips":                true,
+				"security_groups":                      true,
+				"spot_instance_request_id":             true,
+				"subnet_id":                            true,
+				"tags_all":                             true,
+				"tenancy":                              true,
+				"user_data":                            true,
+				"user_data_base64":                     true,
+				"vpc_security_group_ids":               true,
+			},
+			"before": null,
+		},
+		"deposed":        "",
+		"index":          null,
+		"mode":           "managed",
+		"module_address": "",
+		"name":           "hcp_packer",
+		"provider_name":  "registry.terraform.io/hashicorp/aws",
+		"type":           "aws_instance",
+	},
+}
+
+resource_drift = {}
+
+output_changes = {}
+
+raw = {
+	"configuration": {
+		"provider_config": {
+			"aws": {
+				"expressions": {
+					"region": {
+						"references": [
+							"var.region",
+						],
+					},
+				},
+				"full_name": "registry.terraform.io/hashicorp/aws",
+				"name":      "aws",
+			},
+			"hcp": {
+				"expressions": {
+					"client_id": {
+						"references": [
+							"var.HCP_CLIENT_ID",
+						],
+					},
+					"client_secret": {
+						"references": [
+							"var.HCP_CLIENT_SECRET",
+						],
+					},
+				},
+				"full_name": "registry.terraform.io/hashicorp/hcp",
+				"name":      "hcp",
+			},
+		},
+		"root_module": {
+			"resources": [
+				{
+					"address": "aws_instance.hcp_packer",
+					"expressions": {
+						"ami": {
+							"references": [
+								"data.hcp_packer_artifact.bucket.external_identifier",
+								"data.hcp_packer_artifact.bucket",
+							],
+						},
+						"instance_type": {
+							"constant_value": "t2.micro",
+						},
+					},
+					"mode":                "managed",
+					"name":                "hcp_packer",
+					"provider_config_key": "aws",
+					"schema_version":      1,
+					"type":                "aws_instance",
+				},
+				{
+					"address": "data.hcp_packer_artifact.bucket",
+					"expressions": {
+						"bucket_name": {
+							"references": [
+								"var.bucket_name",
+							],
+						},
+						"channel_name": {
+							"constant_value": "latest",
+						},
+						"platform": {
+							"constant_value": "aws",
+						},
+						"region": {
+							"references": [
+								"var.region",
+							],
+						},
+					},
+					"mode":                "data",
+					"name":                "bucket",
+					"provider_config_key": "hcp",
+					"schema_version":      0,
+					"type":                "hcp_packer_artifact",
+				},
+			],
+			"variables": {
+				"HCP_CLIENT_ID": {
+					"sensitive": true,
+				},
+				"HCP_CLIENT_SECRET": {
+					"sensitive": true,
+				},
+				"bucket_name": {
+					"description": "The name of the HCP Packer bucket to use",
+				},
+				"region": {
+					"description": "The AWS region to deploy the instance in",
+				},
+			},
+		},
+	},
+	"format_version": "1.2",
+	"planned_values": {
+		"root_module": {
+			"resources": [
+				{
+					"address":        "aws_instance.hcp_packer",
+					"mode":           "managed",
+					"name":           "hcp_packer",
+					"provider_name":  "registry.terraform.io/hashicorp/aws",
+					"schema_version": 1,
+					"sensitive_values": {
+						"capacity_reservation_specification": [],
+						"cpu_options":                        [],
+						"credit_specification":               [],
+						"ebs_block_device":                   [],
+						"enclave_options":                    [],
+						"ephemeral_block_device":             [],
+						"instance_market_options":            [],
+						"ipv6_addresses":                     [],
+						"launch_template":                    [],
+						"maintenance_options":                [],
+						"metadata_options":                   [],
+						"network_interface":                  [],
+						"private_dns_name_options":           [],
+						"root_block_device":                  [],
+						"secondary_private_ips":              [],
+						"security_groups":                    [],
+						"tags_all":                           {},
+						"vpc_security_group_ids":             [],
+					},
+					"type": "aws_instance",
+					"values": {
+						"ami": "ami-0040e243c5f8879c3",
+						"credit_specification":        [],
+						"get_password_data":           false,
+						"hibernation":                 null,
+						"instance_type":               "t2.micro",
+						"launch_template":             [],
+						"source_dest_check":           true,
+						"tags":                        null,
+						"timeouts":                    null,
+						"user_data_replace_on_change": false,
+						"volume_tags":                 null,
+					},
+				},
+			],
+		},
+	},
+	"prior_state": {
+		"format_version":    "1.0",
+		"terraform_version": "1.11.3",
+		"values": {
+			"root_module": {
+				"resources": [
+					{
+						"address":        "data.hcp_packer_artifact.bucket",
+						"mode":           "data",
+						"name":           "bucket",
+						"provider_name":  "registry.terraform.io/hashicorp/hcp",
+						"schema_version": 0,
+						"sensitive_values": {
+							"labels": {},
+						},
+						"type": "hcp_packer_artifact",
+						"values": {
+							"bucket_name":         "aws-core-ubuntu-2204",
+							"build_id":            "01J4MHPBM4AEBYNTRS3DHQHVFV",
+							"channel_name":        "latest",
+							"component_type":      "amazon-ebs.amazon-ebs",
+							"created_at":          "2024-08-06T19:18:42.248Z",
+							"external_identifier": "ami-0040e243c5f8879c3",
+							"id": "01J4MJ27T8GW012VBVSAQ283WP",
+							"labels": {
+								"build-source": "packer-aws",
+								"build-time":   "2024-08-06T19:14:42Z",
+								"git_sha":      "75bdf337f8df16c428fa3dfaee43dd3a549e89d6",
+							},
+							"organization_id":     "9a396095-30f1-4129-8415-5c4f257b4962",
+							"packer_run_uuid":     "1c9788c7-618d-f10c-7f07-e8829f1758b4",
+							"platform":            "aws",
+							"project_id":          "a172a35d-08c3-4fda-8e66-8a0e7a1dede9",
+							"region":              "us-east-1",
+							"revoke_at":           null,
+							"version_fingerprint": "1",
+						},
+					},
+				],
+			},
+		},
+	},
+	"relevant_attributes": [
+		{
+			"attribute": [
+				"external_identifier",
+			],
+			"resource": "data.hcp_packer_artifact.bucket",
+		},
+	],
+	"resource_changes": [
+		{
+			"address": "aws_instance.hcp_packer",
+			"change": {
+				"actions": [
+					"create",
+				],
+				"after": {
+					"ami": "ami-0040e243c5f8879c3",
+					"credit_specification":        [],
+					"get_password_data":           false,
+					"hibernation":                 null,
+					"instance_type":               "t2.micro",
+					"launch_template":             [],
+					"source_dest_check":           true,
+					"tags":                        null,
+					"timeouts":                    null,
+					"user_data_replace_on_change": false,
+					"volume_tags":                 null,
+				},
+				"after_sensitive": {
+					"capacity_reservation_specification": [],
+					"cpu_options":                        [],
+					"credit_specification":               [],
+					"ebs_block_device":                   [],
+					"enclave_options":                    [],
+					"ephemeral_block_device":             [],
+					"instance_market_options":            [],
+					"ipv6_addresses":                     [],
+					"launch_template":                    [],
+					"maintenance_options":                [],
+					"metadata_options":                   [],
+					"network_interface":                  [],
+					"private_dns_name_options":           [],
+					"root_block_device":                  [],
+					"secondary_private_ips":              [],
+					"security_groups":                    [],
+					"tags_all":                           {},
+					"vpc_security_group_ids":             [],
+				},
+				"after_unknown": {
+					"arn": true,
+					"associate_public_ip_address":        true,
+					"availability_zone":                  true,
+					"capacity_reservation_specification": true,
+					"cpu_core_count":                     true,
+					"cpu_options":                        true,
+					"cpu_threads_per_core":               true,
+					"credit_specification":               [],
+					"disable_api_stop":                   true,
+					"disable_api_termination":            true,
+					"ebs_block_device":                   true,
+					"ebs_optimized":                      true,
+					"enable_primary_ipv6":                true,
+					"enclave_options":                    true,
+					"ephemeral_block_device":             true,
+					"host_id":                            true,
+					"host_resource_group_arn":            true,
+					"iam_instance_profile":               true,
+					"id": true,
+					"instance_initiated_shutdown_behavior": true,
+					"instance_lifecycle":                   true,
+					"instance_market_options":              true,
+					"instance_state":                       true,
+					"ipv6_address_count":                   true,
+					"ipv6_addresses":                       true,
+					"key_name":                             true,
+					"launch_template":                      [],
+					"maintenance_options":                  true,
+					"metadata_options":                     true,
+					"monitoring":                           true,
+					"network_interface":                    true,
+					"outpost_arn":                          true,
+					"password_data":                        true,
+					"placement_group":                      true,
+					"placement_partition_number":           true,
+					"primary_network_interface_id":         true,
+					"private_dns":                          true,
+					"private_dns_name_options":             true,
+					"private_ip":                           true,
+					"public_dns":                           true,
+					"public_ip":                            true,
+					"root_block_device":                    true,
+					"secondary_private_ips":                true,
+					"security_groups":                      true,
+					"spot_instance_request_id":             true,
+					"subnet_id":                            true,
+					"tags_all":                             true,
+					"tenancy":                              true,
+					"user_data":                            true,
+					"user_data_base64":                     true,
+					"vpc_security_group_ids":               true,
+				},
+				"before":           null,
+				"before_sensitive": false,
+			},
+			"mode":          "managed",
+			"name":          "hcp_packer",
+			"provider_name": "registry.terraform.io/hashicorp/aws",
+			"type":          "aws_instance",
+		},
+	],
+	"terraform_version": "1.11.3",
+	"timestamp":         "2025-06-09T21:36:02Z",
+	"variables": {
+		"HCP_CLIENT_ID": {
+			"value": "REDACTED_SENSITIVE",
+		},
+		"HCP_CLIENT_SECRET": {
+			"value": "REDACTED_SENSITIVE",
+		},
+		"bucket_name": {
+			"value": "aws-core-ubuntu-2204",
+		},
+		"region": {
+			"value": "us-east-1",
+		},
+	},
+}

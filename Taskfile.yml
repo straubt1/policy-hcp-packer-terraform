@@ -3,6 +3,12 @@ version: '3'
 dotenv: ['.env', 'secrets/.env']
 
 tasks:
+  sentinel-test-no-image:
+    desc: Run both policies to compare difference
+    cmds:
+      - sentinel test -run="/test-fail-raw-ami.hcl" policies/aws/enforce-hcp-packer-images-original.sentinel
+      - sentinel test -run="/test-fail-raw-ami.hcl" policies/aws/enforce-hcp-packer-images.sentinel
+
   hcp-list-buckets:
     desc: Get API Response - List HCP Buckets
     vars:
